@@ -1,0 +1,79 @@
+name: Weekly Midnattsloppet Scrape
+
+on:
+  schedule:
+    # Sundays at 02:00 UTC (≈ 04:00 Stockholm during summer). Adjust if you want.
+    - cron: "0 2 * * 0"
+  workflow_dispatch: {}  # allow manual runs
+
+permissions:
+  contents: write   # needed to commit the updated parquet
+
+concurrency:
+  group: weekly-scrape        # avoids overlapping runs
+  cancel-in-progress: true
+
+env:
+  END_DATE: "2025-09-20"      # stop after this date (UTC comparison)
+  UA: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0"
+  END_PAGE: "1500"            # tweak as needed
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Date guard (stop after END_DATE)
+        id: date_guard
+        run: |
+          TODAY="$(date -u +%Y-%m-%d)"
+          if [[ "$TODAY" > "${END_DATE}" ]]; then
+            echo "Past END_DATE (${END_DATE}). Exiting."
+            echo "CONTINUE=false" >> $GITHUB_OUTPUT
+            exit 0
+          else
+            echo "CONTINUE=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Docker Buildx
+        if: steps.date_guard.outputs.CONTINUE == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (no push)
+        if: steps.date_guard.outputs.CONTINUE == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: mdloppet-scraper:ci
+          load: true
+          # You can add caching to speed up builds:
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
+
+      - name: Run scraper container
+        if: steps.date_guard.outputs.CONTINUE == 'true'
+        run: |
+          mkdir -p data
+          docker run --rm --shm-size=1g \
+            -v "$PWD/data:/out" \
+            mdloppet-scraper:ci \
+            --start-page 1 \
+            --end-page "${END_PAGE}" \
+            --output /out/results.parquet \
+            --user-agent "${UA}" \
+            --verbose
+
+      - name: Show result size
+        if: steps.date_guard.outputs.CONTINUE == 'true'
+        run: ls -lh data/results.parquet
+
+      - name: Commit results.parquet
+        if: steps.date_guard.outputs.CONTINUE == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update results.parquet (weekly) [skip ci]"
+          file_pattern: data/results.parquet

@@ -74,7 +74,7 @@ class ScrapeConfig:
     checkpoint_interval: int = 50
     checkpoint_path: Optional[str] = None
     verbose: bool = False
-    geckodriver_path: Optional[str] = "geckodriver"  # for selenium backend only
+    geckodriver_path: Optional[str] = "bin/geckodriver"  # for selenium backend only
 
 
 # --------------

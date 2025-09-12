@@ -1,0 +1,21 @@
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pytest_cache/
+
+# Local envs
+.venv/
+.uv/
+
+# Git / IDE
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Local outputs that we don't need in image context
+data/
+out/
+*.parquet
