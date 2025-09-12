@@ -1,0 +1,14 @@
+[project]
+name = "mdloppet-analysis"
+version = "0.1.0"
+description = "Project to analyse the data from the Midnattsloppet website for 10km Stockholm run."
+readme = "Midnattsloppet-Scraper.md"
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.13.5",
+    "fastparquet>=2024.11.0",
+    "pandas>=2.3.2",
+    "playwright>=1.55.0",
+    "pyarrow>=21.0.0",
+    "selenium>=4.35.0",
+]
