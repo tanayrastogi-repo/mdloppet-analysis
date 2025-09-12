@@ -16,7 +16,7 @@ concurrency:
 env:
   END_DATE: "2025-09-20"      # stop after this date (UTC comparison)
   UA: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0"
-  END_PAGE: "1500"            # tweak as needed
+  END_PAGE: "10"            # tweak as needed
 
 jobs:
   build-and-run:
