@@ -1,4 +1,4 @@
-# Midnattsloppet 2025 Results Scraper (with help with LLM)
+# Midnattsloppet 2025 Results Scraper
 
 A robust, production-ready scraper for Midnattsloppet results that supports two backends:
 1) Playwright (default; fast and resilient for JS-heavy sites)
