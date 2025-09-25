@@ -116,13 +116,15 @@ def main() -> None:
     finished = int(race.data["finished"].sum())
     fastest = race.data.loc[race.data["finished"], "time"].min()
     slowest = race.data.loc[race.data["finished"], "time"].max()
+    average = race.data.loc[race.data["finished"], "time"].mean()
     m_f_ratio_race = race.gender_ratio_or_none()
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Participants", f"{total:,}")
     c2.metric("Finished", f"{finished:,}")
     c3.metric("Fastest", f"{fastest.strftime('%H:%M:%S') if fastest else '—'}")
-    c4.metric("Slowest", f"{slowest.strftime('%H:%M:%S') if slowest else '—'}")
+    c4.metric("Average", f"{average.strftime('%H:%M:%S') if average else '—'}")
+    c5.metric("Slowest", f"{slowest.strftime('%H:%M:%S') if slowest else '—'}")
     # View Dataframe
     st.dataframe(race.data.head(10), width="stretch")
 
