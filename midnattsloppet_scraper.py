@@ -11,7 +11,7 @@ from typing import List, Optional
 
 import pandas as pd
 from bs4 import BeautifulSoup
-
+from datetime import time as dtime
 
 # -------------------------------
 # Configuration & Data Structures
@@ -157,6 +157,61 @@ def extract_text(node: Optional[BeautifulSoup]) -> Optional[str]:
     return node.get_text(strip=True)
 
 
+def _to_int(s: Optional[str]) -> Optional[int]:
+    """Best-effort cast to int from a string containing digits; returns None on failure."""
+    if not s:
+        return None
+    txt = s.strip()
+    m = re.match(r"^\D*(\d+)\D*$", txt)
+    if not m:
+        return None
+    try:
+        return int(m.group(1))
+    except Exception:
+        return None
+
+
+def _parse_time_to_timeobj(s: Optional[str]) -> Optional[dtime]:
+    """Parse 'mm:ss' or 'h:mm:ss' into datetime.time; returns None if not parseable.
+
+    Examples handled:
+        '30:51'   -> 00:30:51
+        '0:00'    -> 00:00:00
+        '7:29'    -> 00:07:29
+        '1:34:25' -> 01:34:25
+    """
+    if not s:
+        return None
+
+    # Normalize spaces, non-ASCII colon, and trim
+    txt = s.strip().replace(" ", "").replace("：", ":")
+    parts = txt.split(":")
+    if len(parts) == 2:
+        # mm:ss
+        mm, ss = parts
+        if not (mm.isdigit() and ss.isdigit()):
+            return None
+        m_val = int(mm)
+        s_val = int(ss)
+        if not (0 <= m_val <= 59 and 0 <= s_val <= 59):
+            return None
+        return dtime(hour=0, minute=m_val, second=s_val)
+    elif len(parts) == 3:
+        # h:mm:ss
+        hh, mm, ss = parts
+        if not (hh.isdigit() and mm.isdigit() and ss.isdigit()):
+            return None
+        h_val = int(hh)
+        m_val = int(mm)
+        s_val = int(ss)
+        # datetime.time can't exceed 23 hours; race times reasonably fall under that.
+        if not (0 <= h_val <= 23 and 0 <= m_val <= 59 and 0 <= s_val <= 59):
+            return None
+        return dtime(hour=h_val, minute=m_val, second=s_val)
+    else:
+        return None
+
+
 def parse_rows(html: str) -> List[dict]:
     """Parse a results page's HTML into a list of record dictionaries with strict types.
 
@@ -181,60 +236,6 @@ def parse_rows(html: str) -> List[dict]:
           - "time": datetime.time if parseable else None
           - "finished": bool (True iff place is an int)
     """
-    from datetime import time as dtime
-
-    def _to_int(s: Optional[str]) -> Optional[int]:
-        """Best-effort cast to int from a string containing digits; returns None on failure."""
-        if not s:
-            return None
-        txt = s.strip()
-        m = re.match(r"^\D*(\d+)\D*$", txt)
-        if not m:
-            return None
-        try:
-            return int(m.group(1))
-        except Exception:
-            return None
-
-    def _parse_time_to_timeobj(s: Optional[str]) -> Optional[dtime]:
-        """Parse 'mm:ss' or 'h:mm:ss' into datetime.time; returns None if not parseable.
-
-        Examples handled:
-            '30:51'   -> 00:30:51
-            '0:00'    -> 00:00:00
-            '7:29'    -> 00:07:29
-            '1:34:25' -> 01:34:25
-        """
-        if not s:
-            return None
-
-        # Normalize spaces, non-ASCII colon, and trim
-        txt = s.strip().replace(" ", "").replace("：", ":")
-        parts = txt.split(":")
-        if len(parts) == 2:
-            # mm:ss
-            mm, ss = parts
-            if not (mm.isdigit() and ss.isdigit()):
-                return None
-            m_val = int(mm)
-            s_val = int(ss)
-            if not (0 <= m_val <= 59 and 0 <= s_val <= 59):
-                return None
-            return dtime(hour=0, minute=m_val, second=s_val)
-        elif len(parts) == 3:
-            # h:mm:ss
-            hh, mm, ss = parts
-            if not (hh.isdigit() and mm.isdigit() and ss.isdigit()):
-                return None
-            h_val = int(hh)
-            m_val = int(mm)
-            s_val = int(ss)
-            # datetime.time can't exceed 23 hours; race times reasonably fall under that.
-            if not (0 <= h_val <= 23 and 0 <= m_val <= 59 and 0 <= s_val <= 59):
-                return None
-            return dtime(hour=h_val, minute=m_val, second=s_val)
-        else:
-            return None
 
     soup = BeautifulSoup(html, "html.parser")
     rows = soup.select(".results-table .row")
