@@ -164,21 +164,27 @@ def main() -> None:
     st.markdown("---")
     st.subheader("Finish Time Distribution")
     page_text.finish_time_1()
-    fig_hist, plot_df = build_finish_histogram(race.data)
-    st.plotly_chart(fig_hist, use_container_width=True)
 
-    with st.expander("Mean finish time (min) by Age × Gender"):
-        pivot = (
-            plot_df.groupby(["agegrp", "gender"])["time"]
-            .mean()
-            .dt.second.div(60)
-            .reset_index()
-            .pivot(index="agegrp", columns="gender", values="time")
-        )
-        st.dataframe(pivot)
+    tab1, tab2 = st.tabs(["📈 Chart", "🗃 Data"])
+    with tab1:
+        fig_hist, plot_df = build_finish_histogram(race.data)
+        st.plotly_chart(fig_hist, use_container_width=True)
+        with st.expander("Mean finish time (min) by Age × Gender"):
+            pivot = (
+                plot_df.groupby(["agegrp", "gender"])["time"]
+                .mean()
+                .dt.second.div(60)
+                .reset_index()
+                .pivot(index="agegrp", columns="gender", values="time")
+            )
+            st.dataframe(pivot)
+    with tab2:
+        page_text.finish_time_2()
+        st.table(race.mean_finish_time_by_age_gender())
 
-    page_text.finish_time_2()
-    st.table(race.mean_finish_time_by_age_gender())
+    # --- Runner vs Everyone ---
+    st.markdown("---")
+    st.subheader("Individual vs Everyone")
 
 
 if __name__ == "__main__":

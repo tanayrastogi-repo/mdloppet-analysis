@@ -73,7 +73,14 @@ Hover or select category to inspect ranges in the plot below.
 
 
 def finish_time_2() -> None:
-    """Note for the mean-by-age table."""
+    st.markdown(
+        """
+Averages by **Age × Gender** give a compact view; medians (on the histogram) are robust for skew.
+        """
+    )
+
+
+def me_vs_everyone() -> None:
     st.markdown(
         """
 Averages by **Age × Gender** give a compact view; medians (on the histogram) are robust for skew.
